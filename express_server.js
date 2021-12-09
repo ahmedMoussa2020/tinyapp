@@ -14,23 +14,20 @@ const urlDatabase = {
 
 
 
-/*const usersDb = {
+const usersDb = {
   eb849b1f: {
     id: 'eb849b1f',
-    name: 'said',
-    email: 'said@live.com',
+    name: 'ahmed',
+    email: 'ahmed@live.se',
     password: '1234',
   },
   '1dc937ec': {
     id: '1dc937ec',
-    name: 'ahmed',
-    email: 'ahmed@live.com',
-    password: '1234',
+    name: 'said',
+    email: 'said@live.com',
+    password: 'meatlover',
   },
 };
-*/
-
-
 
 
 const bodyParser = require("body-parser");
@@ -46,11 +43,59 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  res.render('register');
+  const templateVars = {
+    username: req.cookies["username"],
+    // ... any other vars
+  };
+  res.render("register", templateVars);
+
 })
 
 
+app.get('/users.json', (req, res) => {
+  res.json(usersDb);
+});
 
+
+app.post('/register', (req, res) => {
+  const name = req.body.name;
+  const email = req.body.email;
+  const password = req.body.password;
+
+
+  for (let userId in usersDb) {
+    const user = usersDb[userId];
+
+    if (user.email === email){
+      res.status(403).send('Sorry hoddy its taken');
+      return;
+    }
+  }
+
+
+  const userId = Math.random().toString(36).substr(2,8);
+
+  const newUser = {
+    id: userId,
+    name,
+    email,
+    password,
+  };
+
+  usersDb[userId] = newUser;
+
+
+
+  res.cookie('user_id', userId);
+
+
+  res.redirect('/index');
+
+
+
+
+
+});
 
 
 app.post('/logout', (req, res) => {
@@ -71,7 +116,7 @@ app.get('/login', (req, res) => {
     username: req.cookies["username"],
     // ... any other vars
   };
-  res.render("urls_index", templateVars);
+  res.render("login", templateVars);
   
 })
 
@@ -81,23 +126,9 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 })
 
-app.post('/register', (req, res) => {
-  const name = req.body.name;
-  const email = req.body.email;
-  const password = req.body.password //you were here
-  const userId = Math.random().toString(36).substr(2, 8);
-  
-})
 
 
 
-
-/*const newUser = {
-  id: userId,
-  name,
-  email,
-  password,
-};*/
 
 
 
