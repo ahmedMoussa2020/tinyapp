@@ -12,7 +12,17 @@ const urlDatabase = {
 };
 
 
+const findUserByEmail = (email, db) => {
+  for (let userId in db) {
+    const user = db[userId]; // => retrieve the value
 
+    if (user.email === email) {
+      return user;
+    }
+  }
+
+  return false;
+};
 
 const usersDb = {
   eb849b1f: {
@@ -43,13 +53,23 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 app.get('/register', (req, res) => {
+  const userId = req.cookies['user_id']
+  const user = usersDb[userId]
   const templateVars = {
-    username: req.cookies["username"],
+    user: user
+    
     // ... any other vars
   };
   res.render("register", templateVars);
 
 })
+
+// app.get('/quoteList', (req, res) => {
+//   const quoteList = Object.values(movieQuotesDb);
+//   const templateVars = { quotesArr: quoteList};
+
+//   res.render('quotes', templateVars);
+// });
 
 
 app.get('/users.json', (req, res) => {
@@ -58,22 +78,37 @@ app.get('/users.json', (req, res) => {
 
 
 app.post('/register', (req, res) => {
+  console.log('usersDb', usersDb);
   const name = req.body.name;
   const email = req.body.email;
   const password = req.body.password;
 
+  if ("" === req.body.password){
+    res.send('400 please type password').end();
+    return;
+  }
 
-  for (let userId in usersDb) {
-    const user = usersDb[userId];
-
-    if (user.email === email){
-      res.status(403).send('Sorry hoddy its taken');
-      return;
-    }
+  if ("" === req.body.email){
+    res.send('type email').end();
+    return;
   }
 
 
-  const userId = Math.random().toString(36).substr(2,8);
+  
+
+  
+  const user = findUserByEmail(email, usersDb);
+
+  if (user) {
+    res.status(403).send('400 sorry user already excist');
+    return;
+  }
+
+
+ 
+
+
+  const userId = Math.random().toString(36).substr(2, 8);
 
   const newUser = {
     id: userId,
@@ -82,6 +117,8 @@ app.post('/register', (req, res) => {
     password,
   };
 
+   
+
   usersDb[userId] = newUser;
 
 
@@ -89,7 +126,7 @@ app.post('/register', (req, res) => {
   res.cookie('user_id', userId);
 
 
-  res.redirect('/index');
+  res.redirect('/urls');
 
 
 
@@ -97,34 +134,58 @@ app.post('/register', (req, res) => {
 
 });
 
+app.post('/login', (req, res) =>{
+
+  const email = req.body.email;
+  const password = req.body.password;
+
+
+
+  const user = findUserByEmail(email, usersDb);
+
+  if(user && user.password === password) {
+    res.cookie('user_id', user.id);
+    res.redirect('/urls');
+    return;
+  }
+
+  res.status(401).send('wrong username');
+})
+
 
 app.post('/logout', (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect('/urls')
 });
 
 app.get('/', (req, res) => {
   res.cookie('Username', username)
-})
-
-
+});
 
 
 
 app.get('/login', (req, res) => {
-  const templateVars = {
-    username: req.cookies["username"],
-    // ... any other vars
-  };
-  res.render("login", templateVars);
-  
-})
+  const templateVars = {user: null};
 
-app.post('/login', (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
-  res.redirect('/urls');
-})
+  res.render('login', templateVars)
+});
+
+
+
+// app.get('/login', (req, res) => {
+//   const templateVars = {
+//     username: req.cookies["username"],
+//     // ... any other vars
+//   };
+//   res.render("login", templateVars);
+  
+// });
+
+// app.post('/login', (req, res) => {
+//   const username = req.body.username;
+//   res.cookie("username", username);
+//   res.redirect('/urls');
+// });
 
 
 
@@ -143,7 +204,9 @@ app.get('/u/:shortURL', (req, res) => {
 
 
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+  const userId = req.cookies['user_id']
+  const user = usersDb[userId]
+  const templateVars = { urls: urlDatabase, user: user};
   res.render('urls_index', templateVars);
 });
 
