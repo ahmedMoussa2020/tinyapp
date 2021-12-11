@@ -1,16 +1,23 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require('cookie-parser')
-app.use(cookieParser())
+const cookieParser = require('cookie-parser');
+// const cookieSession = redirect('cookie-session');
+const bcrypt = require('bcryptjs');
 
+app.use(cookieParser())
+// app.use(cookieSession({ 
+//     name: 'session',
+//     keys: ['key1', 'key2']
+  
+// }));
+ 
 app.set("view engine", "ejs");
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
-
 
 const findUserByEmail = (email, db) => {
   for (let userId in db) {
@@ -52,6 +59,13 @@ app.get('/u/:shortURL', (req, res) => {
   res.redirect(urlDatabase[req.params.shortURL]);
 });
 
+app.get('/urls/:shortURL', (req, res) => {
+  let shortURL = req.params.shortURL
+  let longURL = urlDatabase[shortURL]
+  const templateVars = { shortURL, longURL, user: req.cookies["username"] };
+  res.render('urls_show', templateVars);
+});
+
 app.get('/register', (req, res) => {
   const userId = req.cookies['user_id']
   const user = usersDb[userId]
@@ -78,79 +92,54 @@ app.get('/users.json', (req, res) => {
 
 
 app.post('/register', (req, res) => {
-  console.log('usersDb', usersDb);
-  const name = req.body.name;
-  const email = req.body.email;
-  const password = req.body.password;
 
-  if ("" === req.body.password){
-    res.send('400 please type password').end();
-    return;
-  }
-
-  if ("" === req.body.email){
-    res.send('type email').end();
-    return;
-  }
-
-
+  const {email, password, name} = req.body;
+  if(!email || !password || !name) {
+    return res.send(400, "you need to pass an email and password and name!")
+  };
   
-
-  
-  const user = findUserByEmail(email, usersDb);
-
-  if (user) {
-    res.status(403).send('400 sorry user already excist');
-    return;
+  const emailExist = findUserByEmail(email, usersDb);
+  if(emailExist) {
+    return res.send(400, "Sorry this email alredy exist")
   }
-
-
- 
-
 
   const userId = Math.random().toString(36).substr(2, 8);
+  const hashedPassword = bcrypt.hashSync(password, 10);
 
-  const newUser = {
+  usersDb[userId] = {
     id: userId,
     name,
     email,
-    password,
+    password: hashedPassword,
   };
-
-   
-
-  usersDb[userId] = newUser;
-
-
-
+  
   res.cookie('user_id', userId);
-
-
   res.redirect('/urls');
-
-
-
-
 
 });
 
 app.post('/login', (req, res) =>{
 
-  const email = req.body.email;
-  const password = req.body.password;
-
-
+  // const email = req.body.email;
+  // const password = req.body.password;
+  const {email, password} = req.body;
+  if(!email || !password) {
+    return res.send(400, "you need to pass an email and password!")
+  };
 
   const user = findUserByEmail(email, usersDb);
+  if(!user) {
+    return res.send(400, "User does not exist")
+  } 
 
-  if(user && user.password === password) {
-    res.cookie('user_id', user.id);
-    res.redirect('/urls');
-    return;
+  const passwordMatch = bcrypt.compareSync(password, user.password);
+    if(!passwordMatch) {
+      return res.send(400, "Password does not match.")
   }
 
-  res.status(401).send('wrong username');
-})
+  res.cookie('user_id', user.id);
+  res.redirect('/urls');
+});
 
 
 app.post('/logout', (req, res) => {
@@ -188,17 +177,9 @@ app.get('/login', (req, res) => {
 // });
 
 
-
-
-
-
-
-
-
 app.get('/u/:shortURL', (req, res) => {
   res.redirect(urlDatabase[req.params.shortURL]);
 });
-
 
 
 
@@ -219,13 +200,11 @@ app.post('/urls/:id', (req, res) => {
   res.redirect('/urls');
 });
 
-
 app.post('/urls/:shortURL/delete', (req, res) => {
   let shortURL = req.params.shortURL;
   delete urlDatabase[shortURL]
   res.redirect('/urls')
 });
-
 
 app.post('/urls', (req, res) => {
   console.log(req.body)
@@ -239,8 +218,6 @@ app.get('/urls/new', (req, res) => {
   const templateVars = {username: req.cookies["username"]}
   res.render('urls_new', templateVars);
 });
-
-
 
 app.get('/urls/new', (req, res) => {
   res.render('urls_new');
@@ -258,13 +235,6 @@ function generateRandomString() {
   return randomString;
 }
 
-app.get('/urls/:shortURL', (req, res) => {
-  let shortURL = req.params.shortURL
-  let longURL = urlDatabase[shortURL]
-  const templateVars = { shortURL, longURL, username: req.cookies["username"] };
-  res.render('urls_show', templateVars);
-});
-
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -277,3 +247,4 @@ app.get("/urls.json", (req, res) => {
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
+
