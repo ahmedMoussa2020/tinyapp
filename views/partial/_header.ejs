@@ -6,31 +6,31 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
         <div class="navbar-nav">
-          <% if (typeof(session_id) !== "undefined" && session_id) { %> 
+          <!-- <% if (typeof(session_id) !== "undefined" && session_id) { %>  -->
             <a class="nav-item nav-link" href="/urls">My URLs</a>
             <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-          <% } else { %> 
+          <!-- <% } else { %> 
             <a class="nav-item nav-link" href="/login">Login</a>
             <a class="nav-item nav-link" href="/register">Register</a>
             
-           <% } %> 
+           <% } %>  -->
         </div>
       </div>
        
       <% if(!user){ %>
-        <form method="POST" action="/login">
+        <!-- <form method="POST" action="/login">
           <input type="text" name= "username" placeholder="Username">
           <button type="submit" class="btn btn-outline-dark">Login</button>
-        </form> 
-        <!-- <a class="nav-item nav-link" href="/login">Login</a>
-        <a class="nav-item nav-link" href="/register">Register</a> -->
+        </form>  -->
+        <a class="nav-item nav-link" href="/login">Login</a>
+        <a class="nav-item nav-link" href="/register">Register</a>
       <% } else{ %> 
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a> 
         
         
         <form method="POST" action="/logout">
-          Logged In As <%=user.email%>!
+          Logged In As <%=user.email%>
           <button type="submit" class="btn btn-outline-dark">Logout</button>
         </form> 
      <% } %>
