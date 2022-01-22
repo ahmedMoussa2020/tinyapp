@@ -72,7 +72,7 @@ app.get('/urls', (req, res) => {
     const templateVars = { urls: urls, user: user };
     res.render('urls_index', templateVars);
   } else {
-    res.redirect("/login")
+    res.send("Please login.")
   }
 });
 
@@ -101,16 +101,13 @@ app.get('/urls/:shortURL', (req, res) => {
 });
 
 app.get('/u/:shortURL', (req, res) => {
-  if (!req.session.user_id) {
-    res.send("You are not logged in please login.")
-  } else if (!Object.keys(urlsDB).includes(req.params.shortURL)) {
+  if (!Object.keys(urlsDB).includes(req.params.shortURL)) {
     res.send("Please enter a valid short url.")
   } else if (Object.keys(urlsForUser(req.session.user_id, urlsDB)).includes(req.params.shortURL)) {
     const shortURL = req.params.shortURL;
     const longURL = req.body.longURL;
     urlsDB[shortURL] = { longURL: longURL, userID: req.session.user_id }
-
-    res.redirect("/urls");
+    res.redirect(longURL);
   } else {
     res.send("This short url is not yours.");
   }
