@@ -76,6 +76,14 @@ app.get('/urls', (req, res) => {
   }
 });
 
+app.get('/urls/new', (req, res) => {
+  if (req.session.user_id) {
+    const templateVars = { user: usersDB[req.session.user_id] }
+    res.render('urls_new', templateVars);
+  } else {
+    res.redirect("/login");
+  }
+});
 
 app.get('/urls/:shortURL', (req, res) => {
   if (!req.session.user_id) {
@@ -109,23 +117,7 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 
-app.get('/urls/new', (req, res) => {
-  const templateVars = { user: users[req.session.user_id] };
-  if (!templateVars.user) {
-    res.redirect('/login');
-    return;
-  }
-  res.render('urls_new', templateVars);
-});
 
-// app.get('/urls/new', (req, res) => {
-//   if (req.session.user_id) {
-//     const templateVars = { user: usersDB[req.session.user_id] }
-//     res.render('urls_new', templateVars);
-//   } else {
-//     res.redirect("/login");
-//   }
-// });
 
 app.get('/register', (req, res) => {
   const userId = req.session.user_id
