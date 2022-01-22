@@ -107,32 +107,6 @@ app.post('/register', (req, res) => {
   res.redirect('/urls');
 });
 
-app.get('/register', (req, res) => {
-  const userId = req.session.user_id
-
-  const user = usersDB[userId]
-  const templateVars = {
-    user: user
-  };
-  
-  res.render("register", templateVars);
-})
-
-app.post('/logout', (req, res) => {
-  req.session = null
-  res.redirect('/urls');
-});
-
-app.post('/urls', (req, res) => {
-  if (req.session.user_id) {
-    let urlShort = generateRandomString();
-    let urlLong = req.body.longURL;
-    urlsDB[urlShort] = { longURL: urlLong, userID: req.session.user_id };
-    res.redirect(`/urls/${urlShort}`);
-  } else {
-    res.redirect("/urls");
-  }
-});
 
 app.get('/urls', (req, res) => {
   if (req.session.user_id) {
@@ -146,21 +120,6 @@ app.get('/urls', (req, res) => {
   }
 });
 
-app.post('/urls/:shortURL', (req, res) => {
-  if (!req.session.user_id) {
-    res.send("You are not logged in please login.")
-  } else if (!Object.keys(urlsDB).includes(req.params.shortURL)) {
-    res.send("Please enter a valid short url.")
-  } else if (Object.keys(urlsForUser(req.session.user_id, urlsDB)).includes(req.params.shortURL)) {
-    let shortURL = req.params.shortURL;
-    let longURL = req.body.longURL;
-    urlsDB[shortURL] = { longURL: longURL, userID: req.session.user_id }
-
-    res.redirect("/urls");
-  } else {
-    res.send("This short url is not yours.");
-  }
-});
 
 app.get('/urls/:shortURL', (req, res) => {
   if (!req.session.user_id) {
@@ -193,12 +152,49 @@ app.get('/u/:shortURL', (req, res) => {
   }
 });
 
+
+app.get('/urls/new', (req, res) => {
+  const templateVars = { user: users[req.session.user_id] };
+  if (!templateVars.user) {
+    res.redirect('/login');
+    return;
+  }
+  res.render('urls_new', templateVars);
+});
+
 app.get('/urls/new', (req, res) => {
   if (req.session.user_id) {
     const templateVars = { user: usersDB[req.session.user_id] }
     res.render('urls_new', templateVars);
   } else {
     res.redirect("/login");
+  }
+});
+
+app.get('/register', (req, res) => {
+  const userId = req.session.user_id
+
+  const user = usersDB[userId]
+  const templateVars = {
+    user: user
+  };
+  
+  res.render("register", templateVars);
+})
+
+app.post('/logout', (req, res) => {
+  req.session = null
+  res.redirect('/urls');
+});
+
+app.post('/urls', (req, res) => {
+  if (req.session.user_id) {
+    let urlShort = generateRandomString();
+    let urlLong = req.body.longURL;
+    urlsDB[urlShort] = { longURL: urlLong, userID: req.session.user_id };
+    res.redirect(`/urls/${urlShort}`);
+  } else {
+    res.redirect("/urls");
   }
 });
 
@@ -217,3 +213,18 @@ app.post('/urls/:shortURL/delete', (req, res) => {
   }
 });
 
+app.post('/urls/:shortURL', (req, res) => {
+  if (!req.session.user_id) {
+    res.send("You are not logged in please login.")
+  } else if (!Object.keys(urlsDB).includes(req.params.shortURL)) {
+    res.send("Please enter a valid short url.")
+  } else if (Object.keys(urlsForUser(req.session.user_id, urlsDB)).includes(req.params.shortURL)) {
+    let shortURL = req.params.shortURL;
+    let longURL = req.body.longURL;
+    urlsDB[shortURL] = { longURL: longURL, userID: req.session.user_id }
+
+    res.redirect("/urls");
+  } else {
+    res.send("This short url is not yours.");
+  }
+});
